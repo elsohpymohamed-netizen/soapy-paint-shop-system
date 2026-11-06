@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: paint-mes
+    runtime: node
+    plan: starter
+    buildCommand: echo "no build needed"
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DB_FILE
+        value: /var/data/mes.db
+    disk:
+      name: mes-data
+      mountPath: /var/data
+      sizeGB: 1

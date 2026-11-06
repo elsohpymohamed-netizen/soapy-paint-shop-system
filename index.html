@@ -61,14 +61,14 @@ const STAT={in:'داخل المحطة',passed:'اجتازت',approved:'معتم�
 const KIND={ed:['Karcher','Degreasing','Rinse','Phosphate','ED الرئيسي (V/A/pH)','UF'],ovens:['فرن ED','فرن Primer','فرن Top Coat','كابينة Primer','كابينة Top Coat']};
 const tm=t=>new Date(t).toLocaleString('ar-EG',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
 let me=null,timer=null,sups=[];
-async function api(p,b){const r=await fetch('/api/'+p,b===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||'خطأ'),{code:r.status});return j}
+async function api(p,b){if(location.protocol==='file:')throw Object.assign(new Error('الصفحة مفتوحة كملف. افتحها من رابط السيرفر (مثال: http://عنوان-السيرفر:3000)'),{code:0});const r=await fetch('/api/'+p,b===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).catch(()=>{throw Object.assign(new Error('تعذر الاتصال بالسيرفر. تأكد أنه شغال وأن الرابط صحيح'),{code:0})});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||'خطأ'),{code:r.status});return j}
 function show(id){['login','chg','ctl','sup'].forEach(x=>$(x).classList.toggle('hide',x!==id))}
 async function init(){
   const t=new URLSearchParams(location.search).get('invite');
   if(t){try{const i=await api('invite/'+encodeURIComponent(t));$('inv').classList.remove('hide');$('inv').innerHTML=`مرحباً <b>${esc(i.name)}</b><br>محطتك: <b>${esc(i.station)}</b><br>اسم المستخدم: <b>${esc(i.username)}</b><br><span class="mu">كلمة المرور وصلتك في رسالة واتساب منفصلة.</span>`;$('lu').value=i.username}catch(e){}}
-  try{me=await api('me');enter()}catch{show('login')}
+  if(location.protocol==='file:'){show('login');$('le').textContent='الصفحة مفتوحة كملف. افتحها من رابط السيرفر.';return}try{me=await api('me');enter()}catch{show('login')}
 }
-async function doLogin(){$('le').textContent='';try{await api('login',{username:$('lu').value,password:$('lp').value});$('lp').value='';me=await api('me');enter()}catch(e){$('le').textContent=e.message}}
+async function doLogin(){$('le').textContent='';try{await api('login',{username:$('lu').value,password:$('lp').value});$('lp').value='';try{me=await api('me')}catch{throw new Error('تم الدخول لكن المتصفح لم يحفظ الجلسة. افتح الرابط بنفس العنوان الذي يعمل عليه السيرفر (http أو https)')}enter()}catch(e){$('le').textContent=e.message}}
 function enter(){if(me.must_change)return show('chg');history.replaceState(null,'',location.pathname);me.role==='controller'?startCtl():startSup()}
 async function doChg(){try{await api('password',{password:$('np').value});me=await api('me');$('np').value='';enter()}catch(e){$('ce').textContent=e.message}}
 async function logout(){clearInterval(timer);await api('logout',{}).catch(()=>{});me=null;show('login')}

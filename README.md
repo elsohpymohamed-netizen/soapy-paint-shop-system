@@ -1,1 +1,0 @@
-# sohpy-paint-shop-system

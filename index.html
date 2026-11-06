@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نظام متابعة خط الدهان - Smart MES</title>
+<style>
+:root{--bg:#060813;--card:#0f172a;--bd:#1e293b;--ac:#38bdf8;--tx:#f8fafc;--mu:#94a3b8;--ok:#22c55e;--wa:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--tx);margin:0;padding:16px}
+.w{max-width:1200px;margin:auto}.hide{display:none!important}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);padding:14px 20px;border-radius:14px;border:1px solid var(--bd);margin-bottom:18px}
+.hd h1{color:var(--ac);margin:0;font-size:19px}
+.card{background:var(--card);padding:18px;border-radius:14px;border:1px solid var(--bd);margin-bottom:18px}.card h3{color:var(--ac);margin:0 0 12px;font-size:17px}
+.lg{max-width:420px;margin:50px auto}.lg h2{color:var(--ac);text-align:center;margin-top:0}
+label{display:block;margin-bottom:5px;font-size:13px;font-weight:600;color:#cbd5e1}
+input,select{width:100%;padding:11px;margin-bottom:14px;background:#080c14;border:1px solid var(--bd);color:#fff;border-radius:8px;font-size:14px}
+button{background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:0;padding:11px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;width:100%}
+button.s{width:auto;padding:6px 12px;font-size:12px}button.r{background:#b91c1c}button.g{background:#15803d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.st{background:var(--card);border:1px solid var(--bd);border-right:4px solid var(--ac);border-radius:12px;padding:14px;text-align:center}.st h4{margin:0 0 6px;color:var(--mu);font-size:13px}.st b{font-size:28px;color:var(--ac)}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 12px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}th{background:#080c14;color:var(--ac)}
+.b{background:#1e293b;color:var(--ac);padding:3px 9px;border-radius:6px;font-size:12px;font-weight:700}.mu{color:var(--mu)}.err{color:var(--bad);min-height:20px;font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:800px){.two{grid-template-columns:1fr}}
+.box{background:#080c14;border:1px solid var(--bd);border-radius:8px;padding:12px;font-size:13px;line-height:1.9;margin:10px 0}
+.tl{border-right:3px solid var(--ac);padding-right:14px;margin:8px 8px 0 0}.tl div{margin-bottom:10px}
+</style></head><body><div class="w">
+
+<div id="login" class="card lg hide"><h2>تسجيل الدخول للنظام</h2>
+<div id="inv" class="box hide"></div>
+<label>اسم المستخدم</label><input id="lu" autocomplete="username"><label>كلمة المرور</label><input id="lp" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+<div id="le" class="err"></div><button onclick="doLogin()">دخول</button></div>
+
+<div id="chg" class="card lg hide"><h2>تغيير كلمة المرور</h2><p class="mu">لأمان حسابك اختر كلمة مرور جديدة (8 أحرف على الأقل) قبل المتابعة.</p>
+<label>كلمة المرور الجديدة</label><input id="np" type="password" autocomplete="new-password"><div id="ce" class="err"></div><button onclick="doChg()">حفظ ومتابعة</button></div>
+
+<div id="ctl" class="hide">
+<div class="hd"><h1>لوحة التحكم والمتابعة اللحظية</h1><div><span id="cn" class="mu"></span> <button class="s r" onclick="logout()">خروج</button></div></div>
+<div id="cnt" class="grid"></div>
+<div class="card"><h3>🔎 خط سير عربية (رقم الشاسيه)</h3><div style="display:flex;gap:8px"><input id="jc" placeholder="مثال: CAR-889" style="margin:0" onkeydown="if(event.key==='Enter')journey()"><button style="width:120px" onclick="journey()">بحث</button></div><div id="jr"></div></div>
+<div class="card"><h3>🚗 العربيات على الخط</h3><div class="tw"><table><thead><tr><th>الشاسيه</th><th>الموديل</th><th>اللون</th><th>المحطة</th><th>الحالة</th><th>آخر تحديث</th><th></th></tr></thead><tbody id="ct"></tbody></table></div></div>
+<div class="two"><div class="card"><h3>👥 إضافة مشرف محطة</h3>
+<label>اسم المشرف</label><input id="sn"><label>المحطة</label><select id="ss"></select><label>رقم واتساب (اختياري، بصيغة دولية مثل 20100...)</label><input id="sp" inputmode="tel">
+<div id="se" class="err"></div><button onclick="addSup()">إنشاء حساب ورابط دخول</button><div id="sr"></div>
+<div class="tw" style="margin-top:12px"><table><tbody id="ut"></tbody></table></div></div>
+<div class="card"><h3>📜 آخر العمليات والقراءات</h3><div id="lg" class="box" style="max-height:420px;overflow:auto"></div></div></div></div>
+
+<div id="sup" class="hide">
+<div class="hd"><h1 id="sh"></h1><button class="s r" style="width:auto" onclick="logout()">خروج</button></div>
+<div class="two">
+<div class="card" id="cf"><h3>تسجيل حركة سيارة</h3>
+<label>رقم الشاسيه</label><input id="ci" placeholder="مثال: CAR-889" autocomplete="off">
+<label>الموديل</label><select id="cm"></select><label>اللون</label><select id="cc"></select>
+<label>الإجراء</label><select id="ca"><option value="enter">دخول السيارة للمحطة</option><option value="pass">اجتازت بنجاح ➔ للمحطة التالية</option><option value="spot">تحويل إلى Spot Repair</option><option value="repair">تحويل إلى Repair</option><option value="repaint">إعادة رش بالكامل</option></select>
+<div id="ce2" class="err"></div><button onclick="doCar()">تسجيل</button></div>
+<div class="card hide" id="rf"><h3 id="rt">تسجيل القراءات</h3><label>النوع</label><select id="rk"></select><label>القراءة (الأرقام العشرية مسموحة، مثال: pH 5.8 / 30.5°C)</label><input id="rv"><div id="re" class="err"></div><button onclick="doRead()">حفظ القراءة</button><div id="rl" class="box mu"></div></div>
+</div>
+<div class="card" id="mc"><h3>العربيات في محطتي</h3><div class="tw"><table><thead><tr><th>الشاسيه</th><th>الموديل</th><th>اللون</th><th>الحالة</th><th>الوقت</th></tr></thead><tbody id="mt"></tbody></table></div></div></div>
+</div>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ST={ed:'خط ED',edsand:'صنفرة ED',sealer:'Sealer',pvc:'PVC',primer:'Primer',primersand:'صنفرة البرايمر',topcoat:'Top Coat',spot:'Spot Repair',repair:'Repair',ovens:'الكبائن والأفران'};
+const COUNT=['ed','edsand','sealer','pvc','primer','primersand','topcoat','spot','repair'];
+const STAT={in:'داخل المحطة',passed:'اجتازت',approved:'معتمدة ✔',repaint:'إعادة رش'},ACT={enter:'دخلت المحطة',pass:'اجتازت',spot:'تحويل Spot Repair',repair:'تحويل Repair',repaint:'إعادة رش'};
+const KIND={ed:['Karcher','Degreasing','Rinse','Phosphate','ED الرئيسي (V/A/pH)','UF'],ovens:['فرن ED','فرن Primer','فرن Top Coat','كابينة Primer','كابينة Top Coat']};
+const tm=t=>new Date(t).toLocaleString('ar-EG',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+let me=null,timer=null,sups=[];
+async function api(p,b){const r=await fetch('/api/'+p,b===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||'خطأ'),{code:r.status});return j}
+function show(id){['login','chg','ctl','sup'].forEach(x=>$(x).classList.toggle('hide',x!==id))}
+async function init(){
+  const t=new URLSearchParams(location.search).get('invite');
+  if(t){try{const i=await api('invite/'+encodeURIComponent(t));$('inv').classList.remove('hide');$('inv').innerHTML=`مرحباً <b>${esc(i.name)}</b><br>محطتك: <b>${esc(i.station)}</b><br>اسم المستخدم: <b>${esc(i.username)}</b><br><span class="mu">كلمة المرور وصلتك في رسالة واتساب منفصلة.</span>`;$('lu').value=i.username}catch(e){}}
+  try{me=await api('me');enter()}catch{show('login')}
+}
+async function doLogin(){$('le').textContent='';try{await api('login',{username:$('lu').value,password:$('lp').value});$('lp').value='';me=await api('me');enter()}catch(e){$('le').textContent=e.message}}
+function enter(){if(me.must_change)return show('chg');history.replaceState(null,'',location.pathname);me.role==='controller'?startCtl():startSup()}
+async function doChg(){try{await api('password',{password:$('np').value});me=await api('me');$('np').value='';enter()}catch(e){$('ce').textContent=e.message}}
+async function logout(){clearInterval(timer);await api('logout',{}).catch(()=>{});me=null;show('login')}
+// ---------- المتحكم
+function startCtl(){show('ctl');$('cn').textContent='👤 '+me.name;$('ss').innerHTML=Object.entries(ST).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');loadCtl();timer=setInterval(loadCtl,4000)}
+async function loadCtl(){try{const d=await api('dashboard');
+  $('cnt').innerHTML=COUNT.map(k=>`<div class="st"><h4>${ST[k]}</h4><b>${d.counts[k]||0}</b></div>`).join('');
+  $('ct').innerHTML=d.cars.map(c=>`<tr><td><b>${esc(c.chassis)}</b></td><td><span class="b">${esc(c.model)}</span></td><td><span class="b">${esc(c.color)}</span></td><td>${ST[c.station]||''}</td><td>${STAT[c.status]||''}</td><td class="mu">${tm(c.ts)}</td><td><button class="s" onclick="journey('${esc(c.chassis)}')">خط السير</button></td></tr>`).join('')||'<tr><td colspan="7" class="mu">لا توجد عربيات مسجلة.</td></tr>';
+  $('lg').innerHTML=[...d.events.map(e=>[e.ts,`${esc(e.chassis)} · ${ST[e.station]} · ${ACT[e.action]} · ${esc(e.by)}`]),...d.readings.map(r=>[r.ts,`🧪 ${ST[r.station]} · ${esc(r.kind)}: ${esc(r.text)} · ${esc(r.by)}`])].sort((a,b)=>b[0]-a[0]).slice(0,50).map(x=>`[${tm(x[0])}] ${x[1]}`).join('<br>')||'لا توجد سجلات.';
+  sups=await api('users');$('ut').innerHTML=sups.map(u=>`<tr><td>${esc(u.name)}<br><span class="mu">${esc(u.username)} · ${ST[u.station]}</span></td><td><button class="s" onclick="resetSup(${u.id})">رابط وكلمة مرور جديدة</button></td><td><button class="s ${u.active?'r':'g'}" onclick="toggleSup(${u.id})">${u.active?'إيقاف':'تفعيل'}</button></td></tr>`).join('')
+}catch(e){if(e.code===401)logout()}}
+async function journey(c){c=c||$('jc').value.trim();if(!c)return;$('jc').value=c;try{const d=await api('car/'+encodeURIComponent(c));
+  $('jr').innerHTML=`<div class="box"><b>${esc(d.car.chassis)}</b> · الموديل <span class="b">${esc(d.car.model)}</span> · اللون <span class="b">${esc(d.car.color)}</span><br>الآن: ${ST[d.car.station]||''} — ${STAT[d.car.status]||''}</div><div class="tl">${d.events.map(e=>`<div><b>${ST[e.station]}</b> — ${ACT[e.action]}<br><span class="mu">${tm(e.ts)} · ${esc(e.by)}</span></div>`).join('')}</div>`}catch(e){$('jr').innerHTML=`<div class="err">${esc(e.message)}</div>`}}
+function wa(phone,t){return `https://wa.me/${String(phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(t)}`}
+function creds(r,name,phone){const m1=`مرحباً ${name}\nرابط نظام متابعة خط الدهان (محطة ${r.station}):\n${r.link}\nاسم المستخدم: ${r.username}\n(كلمة المرور في الرسالة التالية)`,m2=`كلمة المرور: ${r.password}`;
+  $('sr').innerHTML=`<div class="box"><b>احفظ البيانات الآن، كلمة المرور لا تظهر مرة أخرى:</b><br>المستخدم: <b>${esc(r.username)}</b><br>كلمة المرور: <b>${esc(r.password)}</b><br>الرابط: <span class="mu">${esc(r.link)}</span><br><div style="display:flex;gap:8px;margin-top:8px"><button class="s g" onclick="window.open('${wa(phone,m1)}')">واتساب: الرابط + المستخدم</button><button class="s g" onclick="window.open('${wa(phone,m2)}')">واتساب: كلمة المرور</button></div></div>`}
+async function addSup(){$('se').textContent='';try{const r=await api('supervisors',{name:$('sn').value,station:$('ss').value});creds(r,$('sn').value.trim(),$('sp').value);$('sn').value='';loadCtl()}catch(e){$('se').textContent=e.message}}
+async function resetSup(id){const u=sups.find(x=>x.id===id);creds(await api(`users/${id}/reset`,{}),u.name,'')}
+async function toggleSup(id){await api(`users/${id}/toggle`,{});loadCtl()}
+// ---------- المشرف
+function startSup(){show('sup');const S=me.station;$('sh').textContent='محطة: '+me.stationName+' — '+me.name;
+  $('cm').innerHTML=['T4','T7pro','T8','JAC','Proton','GD','Toktok'].map(x=>`<option>${x}</option>`).join('');$('cc').innerHTML=['11u','22u','35u','55u','65u','85L','88u','95u','Solid'].map(x=>`<option>${x}</option>`).join('');
+  $('cf').classList.toggle('hide',S==='ovens');$('mc').classList.toggle('hide',S==='ovens');
+  if(KIND[S]){$('rf').classList.remove('hide');$('rk').innerHTML=KIND[S].map(x=>`<option>${x}</option>`).join('');$('rt').textContent=S==='ed'?'💧 قياسات خط ED':'🔥 قراءات الكبائن والأفران'}
+  loadSup();timer=setInterval(loadSup,5000)}
+async function loadSup(){try{const d=await api('station');$('mt').innerHTML=d.cars.map(c=>`<tr><td><b>${esc(c.chassis)}</b></td><td><span class="b">${esc(c.model)}</span></td><td><span class="b">${esc(c.color)}</span></td><td>${STAT[c.status]||''}</td><td class="mu">${tm(c.ts)}</td></tr>`).join('')||'<tr><td colspan="5" class="mu">لا توجد عربيات.</td></tr>';
+  $('rl').innerHTML=d.readings.map(r=>`[${tm(r.ts)}] ${esc(r.kind)}: ${esc(r.text)}`).join('<br>')||'لا توجد قراءات.'}catch(e){if(e.code===401)logout()}}
+async function doCar(){$('ce2').textContent='';try{await api('car',{chassis:$('ci').value,model:$('cm').value,color:$('cc').value,action:$('ca').value});$('ci').value='';$('ce2').innerHTML='<span style="color:var(--ok)">تم التسجيل ✔</span>';loadSup()}catch(e){$('ce2').textContent=e.message}}
+async function doRead(){$('re').textContent='';try{await api('reading',{kind:$('rk').value,text:$('rv').value});$('rv').value='';loadSup()}catch(e){$('re').textContent=e.message}}
+init();
+</script></body></html>
